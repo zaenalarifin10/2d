@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hiyori Live2D – Fixed Version!</title>
+  <title>Hiyori Live2D – Stabil v6!</title>
   <style>
     * { margin:0; padding:0; }
     body, html { height:100%; overflow:hidden; background:linear-gradient(135deg, #fff0f8, #e3f2fd); font-family: 'Segoe UI', Arial; }
@@ -20,41 +20,44 @@
 <body>
 
 <canvas id="canvas"></canvas>
-<div id="info">Loading Hiyori... Versi baru, sabar ya!</div>
+<div id="info">Loading Hiyori... Versi stabil, pasti jalan!</div>
 
 <!-- 1. Live2D Core (CDN Resmi) -->
 <script src="https://cubism.live2d.com/sdk-web/live2dcubismcore.min.js"></script>
 
-<!-- 2. PixiJS v7 (CDN) -->
-<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
+<!-- 2. PixiJS v6 (STABIL buat plugin v0.4.0) -->
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@6/dist/pixi.min.js"></script>
 
-<!-- 3. Plugin Live2D (FILE LOKAL – Versi 0.5.0-ls-8 FIX!) -->
+<!-- 3. Plugin Live2D (LOKAL v0.4.0 – JAMINAN LOAD!) -->
 <script src="js/live2d-plugin.min.js"></script>
 
 <script>
-// Expose PIXI ke window (WAJIB buat plugin!)
+// Expose PIXI
 window.PIXI = PIXI;
 
-// Tunggu load lengkap
-window.addEventListener("load", () => {
-  // Cek plugin (dengan retry)
+// Tunggu load + retry
+let retryCount = 0;
+const maxRetries = 5;
+function checkAndInit() {
   if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
-    document.getElementById("info").textContent = "Plugin loading... (retrying)";
-    setTimeout(initLive2D, 1000); // Retry setelah 1 detik
-    return;
+    retryCount++;
+    if (retryCount < maxRetries) {
+      document.getElementById("info").textContent = `Plugin loading... (retry ${retryCount}/${maxRetries})`;
+      setTimeout(checkAndInit, 500 * retryCount); // Delay bertambah
+      return;
+    } else {
+      document.getElementById("info").textContent = "Error: Plugin gagal total! Cek console F12.";
+      console.error("Live2DModel undefined after retries!");
+      return;
+    }
   }
   initLive2D();
-});
+}
+
+window.addEventListener("load", checkAndInit);
 
 function initLive2D() {
-  // Cek lagi (double check)
-  if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
-    document.getElementById("info").textContent = "Error: Plugin gagal total! Cek console.";
-    console.error("Live2DModel still undefined!");
-    return;
-  }
-
-  // Pixi App
+  // Pixi App v6
   const app = new PIXI.Application({
     view: document.getElementById("canvas"),
     transparent: true,
@@ -66,22 +69,22 @@ function initLive2D() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
   });
 
-  // Load model Hiyori
+  // Load Hiyori
   (async () => {
     try {
       const model = await PIXI.live2d.Live2DModel.from("live2d/hiyori/Hiyori.model3.json");
       app.stage.addChild(model);
 
-      // Ukuran & posisi (optimized buat v7)
+      // Ukuran & posisi (optimized v6)
       const scale = window.innerWidth < 600 ? 0.22 : 0.32;
       model.scale.set(scale);
       model.anchor.set(0.5, 0.5);
       model.position.set(window.innerWidth / 2, window.innerHeight - 120);
 
-      // Idle (kedip mata)
+      // Idle kedip
       model.motion("idle");
 
-      // Ucapan random
+      // Ucapan
       const greetings = [
         "Halo! Seneng ketemu kamu~",
         "Hai! Lagi apa?",
@@ -90,9 +93,9 @@ function initLive2D() {
         "Yay! Kamu klik aku lagi!"
       ];
 
-      // Hit event (klik body)
+      // Hit klik body
       model.on("hit", (hitAreas) => {
-        if (hitAreas.includes("Body") || hitAreas.includes("body")) {
+        if (hitAreas.includes("Body")) {
           const text = greetings[Math.floor(Math.random() * greetings.length)];
           speak(text);
           model.motion("tap_body");
@@ -100,7 +103,7 @@ function initLive2D() {
         }
       });
 
-      // Drag (smooth di v7)
+      // Drag (v6 compatible)
       model.interactive = true;
       let dragging = false;
       model.on("pointerdown", () => dragging = true);
@@ -112,17 +115,16 @@ function initLive2D() {
         }
       });
 
-      // Sukses load!
       document.getElementById("info").textContent = "Halo Hiyori! Klik body-nya~";
 
     } catch (err) {
-      document.getElementById("info").textContent = "Error load: " + err.message;
-      console.error("Model load failed:", err);
+      document.getElementById("info").textContent = "Error model: " + err.message;
+      console.error("Model error:", err);
     }
   })();
 }
 
-// TTS Indonesia
+// TTS
 function speak(text) {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -131,8 +133,6 @@ function speak(text) {
     utterance.pitch = 1.3;
     utterance.volume = 1;
     speechSynthesis.speak(utterance);
-  } else {
-    console.log("TTS not supported:", text);
   }
 }
 </script>
