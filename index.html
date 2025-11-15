@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hiyori Live2D – Stabil v6!</title>
+  <title>Hiyori Live2D – Fix Undefined!</title>
   <style>
     * { margin:0; padding:0; }
     body, html { height:100%; overflow:hidden; background:linear-gradient(135deg, #fff0f8, #e3f2fd); font-family: 'Segoe UI', Arial; }
@@ -20,44 +20,48 @@
 <body>
 
 <canvas id="canvas"></canvas>
-<div id="info">Loading Hiyori... Versi stabil, pasti jalan!</div>
+<div id="info">Loading Hiyori... Versi v7 fix, pasti jalan!</div>
 
 <!-- 1. Live2D Core (CDN Resmi) -->
 <script src="https://cubism.live2d.com/sdk-web/live2dcubismcore.min.js"></script>
 
-<!-- 2. PixiJS v6 (STABIL buat plugin v0.4.0) -->
-<script src="https://cdn.jsdelivr.net/npm/pixi.js@6/dist/pixi.min.js"></script>
+<!-- 2. PixiJS v7 (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
 
-<!-- 3. Plugin Live2D (LOKAL v0.4.0 – JAMINAN LOAD!) -->
+<!-- 3. Plugin Live2D (LOKAL v0.5.0-ls-8 – FIX UNDEFINED!) -->
 <script src="js/live2d-plugin.min.js"></script>
 
 <script>
 // Expose PIXI
 window.PIXI = PIXI;
 
-// Tunggu load + retry
-let retryCount = 0;
-const maxRetries = 5;
-function checkAndInit() {
-  if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
-    retryCount++;
-    if (retryCount < maxRetries) {
-      document.getElementById("info").textContent = `Plugin loading... (retry ${retryCount}/${maxRetries})`;
-      setTimeout(checkAndInit, 500 * retryCount); // Delay bertambah
-      return;
-    } else {
-      document.getElementById("info").textContent = "Error: Plugin gagal total! Cek console F12.";
-      console.error("Live2DModel undefined after retries!");
-      return;
-    }
+// Tunggu load + register MANUAL (FIX dari docs!)
+window.addEventListener("load", () => {
+  // Import Live2DModel setelah Pixi load
+  const { Live2DModel } = PIXI.live2d || window.Live2DModel;
+
+  if (!Live2DModel) {
+    document.getElementById("info").textContent = "Error: Live2DModel masih undefined! Cek console.";
+    console.error("Live2DModel not found!");
+    return;
   }
-  initLive2D();
-}
 
-window.addEventListener("load", checkAndInit);
+  // REGISTER MANUAL TICKER & INTERACTION (WAJIB buat v7!)
+  if (Live2DModel.registerTicker) {
+    Live2DModel.registerTicker(PIXI.Ticker);
+  }
+  if (PIXI.Application.registerPlugin) {
+    PIXI.Application.registerPlugin(PIXI.TickerPlugin);
+  }
+  if (PIXI.Renderer.registerPlugin) {
+    PIXI.Renderer.registerPlugin('interaction', PIXI.InteractionManager);
+  }
 
-function initLive2D() {
-  // Pixi App v6
+  initLive2D(Live2DModel);
+});
+
+function initLive2D(Live2DModel) {
+  // Pixi App v7
   const app = new PIXI.Application({
     view: document.getElementById("canvas"),
     transparent: true,
@@ -72,10 +76,10 @@ function initLive2D() {
   // Load Hiyori
   (async () => {
     try {
-      const model = await PIXI.live2d.Live2DModel.from("live2d/hiyori/Hiyori.model3.json");
+      const model = await Live2DModel.from("live2d/hiyori/Hiyori.model3.json");
       app.stage.addChild(model);
 
-      // Ukuran & posisi (optimized v6)
+      // Ukuran & posisi
       const scale = window.innerWidth < 600 ? 0.22 : 0.32;
       model.scale.set(scale);
       model.anchor.set(0.5, 0.5);
@@ -103,7 +107,7 @@ function initLive2D() {
         }
       });
 
-      // Drag (v6 compatible)
+      // Drag
       model.interactive = true;
       let dragging = false;
       model.on("pointerdown", () => dragging = true);
@@ -138,4 +142,4 @@ function speak(text) {
 </script>
 
 </body>
-</html>
+  </html>
