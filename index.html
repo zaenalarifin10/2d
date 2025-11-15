@@ -25,11 +25,12 @@
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
 <!-- CDN: Pixi-Live2D-Display -->
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.5.0/dist/index.min.js"></script>
-<!-- CDN: Live2D Core -->
-<script src="https://cdn.jsdelivr.net/npm/@live2d/cubismcore@5.0.0/live2dcubismcore.min.js"></script>
+
+<!-- CDN CORE YANG JALAN (RESMI LIVE2D) -->
+<script src="https://cubism.live2d.com/sdk-web/live2dcubismcore.min.js"></script>
 
 <script>
-// Inisialisasi Pixi
+// Pixi App
 const app = new PIXI.Application({
   view: document.getElementById("canvas"),
   transparent: true,
@@ -39,7 +40,7 @@ const app = new PIXI.Application({
 
 window.onresize = () => app.renderer.resize(innerWidth, innerHeight);
 
-// Load model dari folder lokal
+// Load model lokal
 (async () => {
   try {
     const model = await PIXI.live2d.Live2DModel.from("model/Hiyori.model3.json");
@@ -51,7 +52,7 @@ window.onresize = () => app.renderer.resize(innerWidth, innerHeight);
     model.anchor.set(0.5, 0.5);
     model.position.set(innerWidth / 2, innerHeight - 100);
 
-    // Idle animation
+    // Idle
     model.motion("idle");
 
     // Klik → ngomong
@@ -70,17 +71,8 @@ window.onresize = () => app.renderer.resize(innerWidth, innerHeight);
       document.getElementById("info").textContent = text;
     });
 
-    // Bisa digeser
-    let dragging = false;
-    model.on("pointerdown", () => dragging = true);
-    model.on("pointerup", () => dragging = false);
-    model.on("pointerupoutside", () => dragging = false);
-    model.on("pointermove", (e) => {
-      if (dragging) {
-        const pos = e.data.global;
-        model.position.set(pos.x, pos.y);
-      }
-    });
+    // Drag
+    model.draggable = true;
 
   } catch (err) {
     document.getElementById("info").textContent = "Error: " + err.message;
@@ -88,7 +80,7 @@ window.onresize = () => app.renderer.resize(innerWidth, innerHeight);
   }
 })();
 
-// Text-to-Speech
+// TTS
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
