@@ -3,36 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Waifu Hello – Live!</title>
+  <title>Hiyori Live2D – Jalan!</title>
   <style>
     * { margin:0; padding:0; }
-    body, html { height:100%; overflow:hidden; background:linear-gradient(135deg, #ffeef8, #e0f7fa); font-family: 'Segoe UI', Arial, sans-serif; }
+    body, html { height:100%; overflow:hidden; background:linear-gradient(135deg, #fff0f8, #e3f2fd); font-family: 'Segoe UI', Arial; }
     canvas { display:block; width:100%; height:100%; }
     #info {
       position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
-      background:rgba(255,255,255,0.9); padding:10px 20px; border-radius:25px;
-      font-size:14px; color:#d81b60; box-shadow:0 2px 10px rgba(0,0,0,0.1);
-      max-width:80%; text-align:center; pointer-events:none;
+      background:rgba(255,255,255,0.95); padding:10px 20px; border-radius:25px;
+      font-size:14px; color:#d81b60; box-shadow:0 3px 15px rgba(0,0,0,0.1);
+      max-width:85%; text-align:center; pointer-events:none; z-index:10;
     }
-    #info::before { content: "Click me! "; }
+    #info::before { content: "Waifu: "; font-weight:bold; }
   </style>
 </head>
 <body>
 
 <canvas id="canvas"></canvas>
-<div id="info">Loading Hiyori... Sabar ya~</div>
+<div id="info">Loading Hiyori... Sabar ya!</div>
 
-<!-- CDN: Live2D Core (RESMI) -->
+<!-- 1. Live2D Core (RESMI) -->
 <script src="https://cubism.live2d.com/sdk-web/live2dcubismcore.min.js"></script>
 
-<!-- CDN: PixiJS -->
+<!-- 2. PixiJS -->
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
 
-<!-- CDN: Pixi-Live2D-Display -->
+<!-- 3. Pixi-Live2D-Display -->
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.5.0/dist/index.min.js"></script>
 
 <script>
-// Expose PIXI ke window (WAJIB!)
+// Expose PIXI (WAJIB!)
 window.PIXI = PIXI;
 
 // Cek plugin
@@ -53,66 +53,69 @@ window.addEventListener("resize", () => {
   app.renderer.resize(window.innerWidth, window.innerHeight);
 });
 
-// Load model dari folder live2d/
+// Load model dari path yang BENAR
 (async () => {
   try {
-    // PATH SESUAI STRUKTUR KAMU: live2d/
-    const model = await PIXI.live2d.Live2DModel.from("live2d/Hiyori.model3.json");
+    // PATH 100% SESUAI STRUKTUR KAMU
+    const model = await PIXI.live2d.Live2DModel.from("live2d/hiyori/Hiyori.model3.json");
     app.stage.addChild(model);
 
     // Ukuran & posisi
-    const scale = window.innerWidth < 600 ? 0.25 : 0.35;
+    const scale = window.innerWidth < 600 ? 0.22 : 0.32;
     model.scale.set(scale);
     model.anchor.set(0.5, 0.5);
-    model.position.set(window.innerWidth / 2, window.innerHeight - 100);
+    model.position.set(window.innerWidth / 2, window.innerHeight - 120);
 
-    // Idle animation
+    // Idle animation (kedip mata)
     model.motion("idle");
 
-    // Klik body → ngomong
+    // Daftar ucapan
     const greetings = [
       "Halo! Seneng ketemu kamu~",
-      "Hai hai! Lagi apa?",
+      "Hai! Lagi apa nih?",
       "Kyaa~ Jangan klik mulu!",
       "Aku Hiyori, salam kenal!",
       "Yay! Kamu klik aku lagi!"
     ];
 
+    // Klik BODY → ngomong + animasi
     model.on("hit", (hitAreas) => {
-      if (hitAreas.includes("Body")) {
+      if (hitAreas.includes("Body") || hitAreas.includes("BODY")) {
         const text = greetings[Math.floor(Math.random() * greetings.length)];
         speak(text);
-        model.motion("tap_body");
+        model.motion("tap_body"); // atau "TapBody" jika case-sensitive
         document.getElementById("info").textContent = text;
       }
     });
 
-    // Drag
+    // Drag (smooth)
     model.interactive = true;
     let dragging = false;
     model.on("pointerdown", () => dragging = true);
     model.on("pointerup", () => dragging = false);
     model.on("pointerupoutside", () => dragging = false);
     app.stage.on("pointermove", (e) => {
-      if (dragging) {
+      if (dragging && e.target === model) {
         model.position.set(e.global.x, e.global.y);
       }
     });
 
-    document.getElementById("info").textContent = "Halo! Klik body-ku~";
+    // Sukses!
+    document.getElementById("info").textContent = "Halo! Klik body-ku ya~";
 
   } catch (err) {
     document.getElementById("info").textContent = "Error: " + err.message;
-    console.error("Load failed:", err);
+    console.error("Full error:", err);
   }
 })();
 
-// Text-to-Speech
+// Text-to-Speech Indonesia
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
   utterance.rate = 0.9;
   utterance.pitch = 1.3;
+  utterance.volume = 1;
   speechSynthesis.speak(utterance);
 }
 </script>
